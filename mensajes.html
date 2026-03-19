@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mensaje</title>
+
+<style>
+body {
+  font-family: Arial, sans-serif;
+  text-align: center;
+  margin: 0;
+  padding: 0 10px;
+  transition: background 0.3s ease;
+}
+
+/* CONTENEDOR */
+.mensaje-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 100px;
+  width: 100%;
+}
+
+/* POST-IT */
+.mensaje {
+  position: relative;
+  padding: 25px;
+  border-radius: 15px;
+  width: 300px;
+  max-width: 90%;
+  min-height: 120px;
+  font-size: 1.2rem;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+  animation: aparecer 0.5s ease forwards;
+  margin: 0 auto;
+}
+
+@keyframes aparecer {
+
+  0% {
+    transform: translateY(-200px) rotate(-10deg) scale(0.8);
+    opacity: 0;
+  }
+
+  70% {
+    transform: translateY(10px) rotate(-3deg) scale(1.05);
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateY(0px) rotate(-2deg) scale(1);
+    opacity: 1;
+  }
+
+}
+
+#textoMensaje {
+  margin: 0;
+}
+
+/* FIRMA */
+.firma {
+  margin-top: 15px;
+  font-size: 0.9rem;
+  opacity: 0.7;
+}
+
+/* REACCIÓN */
+.reaccion {
+  position: absolute;
+  bottom: -10px;
+  right: -10px;
+  background: white;
+  border-radius: 50%;
+  padding: 5px 8px;
+  font-size: 1.2rem;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+/* BOTONES */
+.reacciones {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.reacciones button {
+  font-size: 1.5rem;
+  margin: 5px;
+  cursor: pointer;
+  background: none;
+  border: none;
+}
+
+/* MENÚ EMOJIS */
+.emoji-menu {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: white;
+  padding: 10px;
+  border-radius: 15px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+  display: none;
+}
+
+.emoji-menu span {
+  font-size: 1.8rem;
+  margin: 5px;
+  cursor: pointer;
+}
+
+/* MEDIA QUERY MOVIL PEQUEÑO */
+@media screen and (max-width: 350px) {
+  .mensaje {
+    font-size: 1rem;
+    padding: 20px;
+  }
+  .reacciones button {
+    font-size: 1.3rem;
+    margin: 3px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div class="mensaje-container">
+  <div class="mensaje" id="mensajeBox">
+    <p id="textoMensaje"></p>
+    <div class="firma" id="firma">Atte. Montana </div>
+    <span id="reaccion" class="reaccion"></span>
+  </div>
+</div>
+
+<div class="reacciones">
+  <button onclick="reaccionar('❤️')">❤️</button>
+  <button onclick="reaccionar('😆')">😆</button>
+  <button onclick="reaccionar('😮')">😮</button>
+  <button onclick="reaccionar('😴')">😴</button>
+  <button onclick="toggleMenu()">➕</button>
+</div>
+
+<div class="emoji-menu" id="emojiMenu">
+  <span onclick="reaccionar('😍')">😍</span>
+  <span onclick="reaccionar('🥺')">🥺</span>
+  <span onclick="reaccionar('😎')">😎</span>
+  <span onclick="reaccionar('😡')">😡</span>
+  <span onclick="reaccionar('🤯')">🤯</span>
+  <span onclick="reaccionar('😴')">😴</span>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
+<script>
+
+//TIEMPO EN PANTALLA EN BASE DE DATOS
+  let inicioLectura = Date.now();
+
+  async function guardarTiempoLectura(estado, mensaje) {
+
+  const segundos = Math.floor((Date.now() - inicioLectura) / 1000);
+
+  const { data, error } = await db.from("aperturas").insert({
+    estado: estado,
+    mensaje: mensaje,
+    segundos_visto: segundos,
+    fecha: new Date().toISOString()
+  });
+
+  if (error) {
+    console.log("Error guardando tiempo:", error);
+  }
+}
+
+document.addEventListener("visibilitychange", () => {
+
+  if (document.visibilityState === "hidden") {
+
+    const mensaje = document.getElementById("textoMensaje").textContent;
+
+    if (mensaje && estado) {
+      guardarTiempoLectura(estado, mensaje);
+    }
+
+  }
+
+});
+
+//CONEXIÓN BASE DE DATOS
+const supabaseUrl = "https://pbnurqqlnpmxvyjscjea.supabase.co";
+const supabaseKey = "sb_publishable_2jY4IA69qjmU1JdwdHx0YA_5HeoItjF";
+const db = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+//REACCIONES EN BASE DE DATOS
+async function reaccionar(emoji) {
+
+  if (navigator.vibrate) {
+    navigator.vibrate(40);
+  }
+
+  const reaccion = document.getElementById("reaccion");
+  reaccion.textContent = emoji;
+
+  const mensaje = document.getElementById("textoMensaje").textContent;
+
+  await db.from("reacciones").insert({
+    mensaje: mensaje,
+    estado: estado,
+    emoji: emoji,
+    fecha: new Date()
+  });
+
+  localStorage.setItem("reaccionHoy", emoji);
+  menu.style.display = "none";
+}
+
+//APERTURA DE LA PAGINA EN BASE DE DATOS
+async function guardarApertura(estado, mensaje) {
+
+  const { data, error } = await db.from("aperturas").insert({
+    estado: estado,
+    mensaje: mensaje,
+    fecha: new Date().toLocaleString("es-MX", { timeZone: "America/Mexico_City" })
+  });
+
+  if (error) {
+    console.log("Error guardando apertura:", error);
+  } else {
+    console.log("Apertura guardada");
+  }
+
+}
+
+// VIBRACIÓN AL ABRIR
+if (navigator.vibrate) {
+  navigator.vibrate(50);
+}
+
+// PARAMETRO
+const params = new URLSearchParams(window.location.search);
+const estado = params.get('estado');
+
+// ELEMENTOS
+const mensajeTexto = document.getElementById('textoMensaje');
+const mensajeBox = document.getElementById('mensajeBox');
+const menu = document.getElementById('emojiMenu');
+
+// MENSAJES
+const mensajes = {
+  feliz: [
+"Saber que andas de buenas me cambia el chip por completo, aunque no te tenga cerca.",
+"Me gusta pensar que hoy tienes mil razones para sonreír y que las estás aprovechando todas.",
+"Qué buena onda que hoy todo te esté saliendo bien; te mereces esa racha de suerte.",
+"Ojalá esa alegría te dure un buen rato, de esas que te dejan con energía para todo el día.",
+"Me da mucha calma saber que hoy el mundo te está tratando con la misma buena vibra que tú das.",
+"Disfruta mucho tu día; cuando estás feliz, parece que todo lo demás se acomoda solo.",
+"No importa qué fue lo que te puso de buenas, me alegra un buen que haya pasado.",
+"A veces solo con imaginarme que estás teniendo un gran día, el mío también mejora.",
+"Hay días en los que se nota que traes toda la actitud, y esos son mis favoritos.",
+"Espero que hoy sientas que puedes con todo, porque neta tienes con qué.",
+"Quédate con esa sensación de que todo está bien; te pertenece.",
+"Me encanta cuando la gente buena tiene días increíbles, y hoy te tocó a ti.",
+"Que nada te quite ese buen mood; disfruta cada momento de hoy.",
+"Si hoy te sientes imparable, es porque seguramente lo eres. No lo dudes.",
+"A veces solo hace falta un buen día para recordar que las cosas valen la pena.",
+"Espero que hoy recibas puras noticias chidas y mucha buena vibra.",
+"A la distancia se siente cuando alguien está en paz, y me da gusto que hoy seas tú.",
+"Disfruta este momento, te has esforzado mucho por estar donde estás hoy.",
+"Que esa sonrisa que traes (porque sé que la traes) no se te quite por nada.",
+"Hoy el día tiene tu nombre escrito, haz que valga la pena.",
+"Me pone muy de buenas saber que hoy no hay nubes grises en tu cabeza.",
+"Aprovecha esa energía para hacer algo que te encante, te lo mereces.",
+"La felicidad te queda increíble, ojalá la lleves puesta todo lo que resta de la semana.",
+"Qué chido es saber que hoy estás disfrutando de las cosas pequeñas.",
+"Pásala increíble hoy, aquí ando celebrando tu buena racha desde lejos.",
+"Espero que este sentimiento de hoy se te quede grabado, para que te acuerdes de lo bien que se siente cuando todo fluye.",
+"Me da mucho gusto saber que hoy la vida te está sonriendo; te juro que no hay nadie que lo merezca más que tú.",
+"A veces solo hace falta un buen día para recordar que eres capaz de lograr lo que sea que te propongas.",
+"Disfruta este momento de calma y alegría; son los que realmente valen la pena atesorar en la memoria.",
+"Qué chido es saber que hoy andas de buenas; ojalá que esa energía te acompañe en todo lo que hagas hoy."
+  ],
+  triste: [
+"Si hoy el día se siente gris, no te presiones. A veces solo toca dejar que pase.",
+"No sé por qué estés pasando, pero recuerda que aquí tienes a alguien que te apoya siempre.",
+"Se vale no estar al cien. No tienes que fingir nada, al menos no conmigo.",
+"Ojalá pudiera mandarte algo que te hiciera sonreír, pero por ahora te mando toda mi buena vibra.",
+"A veces el corazón necesita un descanso. Tómate el tiempo que necesites para sentirte mejor.",
+"Aunque no esté ahí, espero que sientas que no tienes que cargar con todo tú sola.",
+"Tranquila, que los días malos también se terminan. Mañana será otra historia.",
+"No dejes que un mal momento te haga dudar de lo increíble que eres.",
+"Si necesitas distraerte de lo que sientes, aquí estoy para platicar de cualquier tontería.",
+"A veces lo más valiente que puedes hacer hoy es simplemente dejar que el día termine.",
+"No tienes que dar explicaciones de por qué te sientes así; tus sentimientos son válidos.",
+"Espero que pronto encuentres esa calma que te hace falta ahorita.",
+"Incluso en los días difíciles, sigo pensando que eres una persona fuera de lo común.",
+"No te guardes todo; si escribirlo te ayuda, aquí estoy para leerte cuando quieras.",
+"A veces la tristeza solo es una señal de que necesitamos un respiro del mundo.",
+"Confío en que vas a salir de esta, siempre encuentras la manera de volver a brillar.",
+"No permitas que el día de hoy opaque todas las cosas buenas que tienes.",
+"Si hoy te sientes pequeña, recuerda que para mucha gente eres un mundo entero.",
+"Tómate las cosas con calma, un paso a la vez es más que suficiente.",
+"Espero que este mensajito te recuerde que alguien está pensando en ti y desea que estés bien.",
+"Llorar o estar triste no es debilidad, es ser humano. No te castigues por eso.",
+"Deseo que mañana despiertes sintiendo que el peso es un poquito menos.",
+"Nada es para siempre, ni siquiera esa sensación de vacío que tienes ahora.",
+"Cuídate mucho hoy, el mundo puede esperar a que te sientas mejor.",
+"Aquí tienes un lugar seguro, aunque sea digital, para cuando el mundo real pese mucho.",
+"No tienes que ser la versión más alegre de ti misma conmigo; se vale estar triste y simplemente dejar que el tiempo pase.",
+"Si hoy sientes que el ánimo no te alcanza, recuerda que no por eso dejas de ser la persona increíble que eres.",
+"A veces la tristeza solo es el cuerpo pidiendo una pausa; no te pelees con lo que sientes, mejor escúchate un poco.",
+"Ojalá este mensaje te sirva para recordarte que, aunque hoy no sea un buen día, aquí hay alguien que siempre cree en ti.",
+"Tómate tu tiempo para sanar lo que sea que te duela; no hay prisa, el mundo te va a esperar hasta que estés lista."
+  ],
+  enojada: [
+"Neta se vale estar molesta; a veces las cosas simplemente no son como deberían.",
+"Saca ese coraje, no te lo quedes. Aquí puedes quejarte de lo que quieras.",
+"Me gusta que tengas esa fuerza para no dejarte de nadie; habla muy bien de ti.",
+"Si alguien te hizo enojar, neta no sabe con quién se metió. Tú vales mucho más que eso.",
+"No dejes que ese coraje te consuma la energía, úsalo para poner límites chidos.",
+"A veces el mundo es un caos, pero no permitas que ese caos te quite tu esencia.",
+"Te entiendo perfecto; hay cosas que simplemente sacan de quicio a cualquiera.",
+"Respira profundo, no le des el gusto a lo que te molesta de arruinarte la noche.",
+"Estoy de tu lado, sea lo que sea que haya pasado. Tienes mi apoyo total.",
+"Qué coraje que estés pasando por esto, pero sé que vas a saber cómo manejarlo.",
+"A veces hace falta un poco de furia para que las cosas se muevan. No te sientas mal.",
+"No te guardes la molestia, pero tampoco dejes que se quede a vivir contigo.",
+"Eres de esas personas que defienden lo suyo, y eso es algo que admiro un buen.",
+"Si necesitas a alguien para mentar madres un rato, cuenta conmigo.",
+"Trata de no darle vueltas al mismo asunto; distráete con algo que te guste.",
+"A veces la gente no entiende, pero tú mantén tu cabeza en alto.",
+"Espero que ese enojo se convierta pronto en una solución que te dé paz.",
+"No dejes que lo que pasó hoy te quite el sueño; no se lo merecen.",
+"Tienes mucha razón en estar así, pero no dejes que el coraje te gane a ti.",
+"Ojalá que lo que te molestó se resuelva rápido para que vuelvas a estar tranqui.",
+"Tu paz mental es lo más importante, no la regales por alguien que no vale la pena.",
+"A veces explotar un poquito ayuda a limpiar el ambiente. Desahógate.",
+"Confío en tu criterio para mandar a volar lo que no te suma.",
+"Si el día se puso difícil, recuerda que tú eres más fuerte que cualquier obstáculo.",
+"Tómate un respiro antes de actuar; tu calma es tu mejor arma.",
+"No dejes que el coraje que traes hoy te haga olvidar que tienes un corazón enorme; saca la molestia, pero quédate con tu paz.",
+"Es frustrante cuando las cosas no salen como uno quiere, pero confío en que vas a saber darle la vuelta a esta situación.",
+"Tienes toda la razón de estar molesta; no dejes que nadie te diga cómo te tienes que sentir ante una injusticia.",
+"A veces el enojo es necesario para poner límites; si esto te sirvió para darte tu lugar, entonces valió la pena.",
+"Respira profundo y suelta ese peso; no vale la pena que algo externo te robe el brillo por mucho tiempo."
+  ],
+  cansada: [
+"Ojalá hoy puedas dormir sin alarmas y sin pendientes en la cabeza.",
+"Has trabajado un buen, neta te mereces apagar todo y simplemente descansar.",
+"No eres una máquina; se vale decir 'ya no puedo hoy' y dejarlo para mañana.",
+"Espero que este post-it te encuentre ya en tu cama, lista para desconectarte.",
+"Admiro mucho todo lo que haces, pero me importa más que estés bien descansada.",
+"El mundo puede seguir girando sin ti por unas horas, no pasa nada si te vas a dormir.",
+"Que descanses súper bien, de esos sueños que neta te dejan como nueva.",
+"A veces el mejor plan de todos es simplemente cerrar los ojos y no pensar.",
+"No te sientas mal por no haber terminado todo; hiciste lo que pudiste y eso es suficiente.",
+"Tu cuerpo te está pidiendo una pausa, hazle caso. Mañana será otro día.",
+"Deseo que tengas una noche tranquila y que recuperes toda esa energía que diste hoy.",
+"No hay nada más valioso que una mente descansada. Date ese regalo hoy.",
+"Te mando mucha calma para que hoy puedas dormir sin ninguna preocupación.",
+"A veces estar cansada es la señal de que neta lo diste todo. Bien por ti.",
+"Espero que mañana despiertes con el ánimo renovado, pero por ahora, solo descansa.",
+"Suelta el celular, cierra los ojos y olvídate de todo un rato.",
+"Hiciste mucho hoy, date una palmada en la espalda y vete a dormir.",
+"Que nada te quite tus horas de sueño, son sagradas para alguien tan movida como tú.",
+"Me da gusto saber que ya vas a descansar; te lo has ganado más que nadie.",
+"A veces el descanso es la mejor forma de prepararse para lo que viene.",
+"No te presiones por ser productiva 24/7. Descansar también es avanzar.",
+"Espero que hoy duermas tan profundo que se te olviden todos los pendientes.",
+"Tu esfuerzo siempre rinde frutos, pero no olvides cuidar de ti primero.",
+"A la distancia te mando un deseo de buenas noches y mucho descanso.",
+"Mañana te comerás el mundo de nuevo, pero hoy solo déjate querer por tu almohada.",
+"A veces el mayor acto de amor propio que puedes hacer hoy es simplemente apagar todo y dormir un poco más.",
+"Has dado tanto de ti últimamente que es normal que te sientas sin batería; no te exijas de más, descansa.",
+"Espero que hoy encuentres un momento de paz total, de esos donde no tienes que ser nada para nadie, solo tú.",
+"No te sientas culpable por dejar cosas pendientes; tu salud y tu descanso son mucho más importantes que cualquier tarea.",
+"Mañana será otro día y tendrás más fuerza, pero por ahora, por favor, deja que tu cuerpo y tu mente se relajen."
+  ],
+    abrumada: [
+"Sé que traes mil cosas en la cabeza, pero trata de enfocarte en una sola a la vez.",
+"No tienes que resolver tu vida entera en una sola noche. Ve paso a paso.",
+"Confío un buen en tu capacidad de organizar el caos; tú siempre puedes.",
+"Si sientes que el agua te llega al cuello, respira. No estás sola en esto.",
+"A veces las cosas parecen más grandes de lo que son porque estamos cansadas. Mañana se verá mejor.",
+"No te satures queriendo quedar bien con todos; lo importante es que tú estés en paz.",
+"Si necesitas ayuda con algo, aunque sea para organizar ideas, cuenta conmigo.",
+"Respira hondo. El mundo no se va a acabar si algo no sale perfecto hoy.",
+"Tienes una mente brillante, solo necesita un poquito de silencio para encontrar la salida.",
+"Deja de pensar en el 'hubiera' y concéntrate en lo que puedes hacer ahorita mismo.",
+"Eres mucho más fuerte que ese montón de pendientes que te están estresando.",
+"A veces solo hace falta escribir todo en una lista para ver que no es tan grave.",
+"Ojalá este mensaje te sirva para darte un respiro de 5 minutos. Te hace falta.",
+"No dejes que la prisa del mundo te robe tu tranquilidad personal.",
+"Estás haciendo un gran trabajo, aunque ahorita sientas que no avanzas.",
+"Si sientes que vas a explotar, mejor detente un momento y no hagas nada.",
+"Confío plenamente en que vas a salir de esta racha de estrés con la frente en alto.",
+"No tienes que cargar con las expectativas de nadie más que con las tuyas.",
+"Recuerda que lo más importante en medio de todo este ruido sigues siendo tú.",
+"Toma un vaso de agua, estírate un poco y verás que las ideas fluyen mejor.",
+"No dejes que el 'mucho por hacer' te quite el 'mucho por disfrutar'.",
+"Eres muy capaz, no dejes que un momento de saturación te haga dudar de eso.",
+"Espero que pronto encuentres ese espacio de calma que tanto te mereces.",
+"A veces la mejor respuesta al caos es simplemente sentarse a observar un rato.",
+"Aquí estoy por si necesitas soltar un poco de esa presión; no te la quedes toda.",
+"Sé que sientes que tienes mil pendientes, pero confío plenamente en tu inteligencia para ir resolviendo uno por uno.",
+"No intentes cargar el mundo tú sola; si sientes que es demasiado, suelta un poquito y verás cómo todo se aclara.",
+"A veces estar saturada es solo señal de que estás haciendo muchas cosas grandes; no te desesperes, vas por buen camino.",
+"Cuando sientas que el ruido mental es mucho, intenta enfocarte en algo que te guste; a veces la distracción es la mejor medicina.",
+"Confío en que vas a salir de este caos con más fuerza que antes; respira, que nada es tan grave como parece ahorita."
+  ]
+};
+
+// COLORES
+const colores = {
+  feliz: "#fff9c4",
+  triste: "#bbdefb",
+  enojada: "#ffcdd2",
+  cansada: "#e1bee7",
+  abrumada: "#b2dfdb"
+};
+
+const fondo = {
+  feliz: "#fffde7",
+  triste: "#e3f2fd",
+  enojada: "#ffebee",
+  cansada: "#f3e5f5",
+  abrumada: "#e0f2f1"
+};
+
+// ESTILO
+function aplicarEstilo(estado) {
+  if (!estado || !colores[estado]) return;
+
+  mensajeBox.style.backgroundColor = colores[estado];
+  document.body.style.backgroundColor = fondo[estado];
+}
+
+// FECHA
+const hoy = new Date().toDateString();
+
+// STORAGE
+let ultimoDia = localStorage.getItem("ultimoDia");
+let estadoHoy = localStorage.getItem("estadoHoy");
+let mensajeHoy = localStorage.getItem("mensajeHoy");
+let usados = JSON.parse(localStorage.getItem("mensajesUsados")) || [];
+
+// LÓGICA
+if (ultimoDia === hoy && estadoHoy && mensajeHoy) {
+
+  if (estado === estadoHoy) {
+    mensajeTexto.textContent = mensajeHoy;
+    aplicarEstilo(estado);
+
+    guardarApertura(estado, mensajeHoy);
+
+  } else {
+   mensajeTexto.textContent = "Ese no era tu mood de hoy 👀 vuelve mañana ✨";
+
+mensajeBox.style.backgroundColor = "#f0f0f0";
+document.body.style.backgroundColor = "#f0f0f0";
+
+// ocultar firma
+document.getElementById("firma").style.display = "none";
+
+// ocultar reacciones
+document.querySelector(".reacciones").style.display = "none";
+
+// limpiar reacción
+document.getElementById("reaccion").textContent = "";
+
+
+  // ocultar reacción
+  document.getElementById("reaccion").textContent = "";
+  document.querySelector(".reacciones").style.display = "none";
+}
+
+} else {
+
+  if (!mensajes[estado]) {
+    mensajeTexto.textContent = "Error: estado no válido";
+  } else {
+
+    if (usados.length >= mensajes[estado].length) {
+      usados = [];
+    }
+
+    let disponibles = mensajes[estado].filter(m => !usados.includes(m));
+    let nuevoMensaje = disponibles[Math.floor(Math.random() * disponibles.length)];
+
+    usados.push(nuevoMensaje);
+
+    localStorage.setItem("mensajesUsados", JSON.stringify(usados));
+    localStorage.setItem("mensajeHoy", nuevoMensaje);
+    localStorage.setItem("estadoHoy", estado);
+    localStorage.setItem("ultimoDia", hoy);
+
+    mensajeTexto.textContent = nuevoMensaje;
+    aplicarEstilo(estado);
+
+    guardarApertura(estado, nuevoMensaje);
+  }
+}
+
+
+// TOGGLE MENU
+function toggleMenu() {
+  menu.style.display = menu.style.display === "block" ? "none" : "block";
+}
+
+// CARGAR REACCIÓN
+window.onload = () => {
+  const reaccionGuardada = localStorage.getItem("reaccionHoy");
+  const estadoGuardado = localStorage.getItem("estadoHoy");
+
+  if (reaccionGuardada && estado === estadoGuardado) {
+    document.getElementById("reaccion").textContent = reaccionGuardada;
+  }
+};
+</script>
+
+</body>
+</html>

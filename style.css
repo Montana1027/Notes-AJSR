@@ -1,0 +1,18 @@
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    margin: 0;
+    padding: 0;
+    background-color: #9b59b6; /* Fondo morado */
+    color: white;
+  }
+  h1 {
+    margin-top: 50px;
+  }
+  .emojis button {
+    font-size: 3rem;
+    margin: 15px;
+    cursor: pointer;
+    background: none;
+    border: none;
+  }
