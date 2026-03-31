@@ -16,27 +16,3 @@ body {
     background: none;
     border: none;
   }
-.botonRespuesta{
-background:#8ed081;
-border:none;
-padding:10px 14px;
-margin:5px;
-border-radius:8px;
-color:black;
-font-weight:bold;
-cursor:pointer;
-}
-
-.botonRespuesta:hover{
-background:#79c26b;
-}
-
-.botonEnviar{
-background:#9b59b6;
-border:none;
-padding:10px 16px;
-border-radius:8px;
-color:white;
-font-weight:bold;
-cursor:pointer;
-}
