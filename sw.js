@@ -1,4 +1,4 @@
-const CACHE_NAME = 'note-ajsr-v3';
+const CACHE_NAME = 'note-ajsr-v4';
 
 // Lista de archivos que se guardarán en el celular para que carguen rápido
 const ASSETS = [
