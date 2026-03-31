@@ -47,7 +47,15 @@
 
 </div>
 
-  <script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
+<script>
+
+const supabase = window.supabase.createClient(
+  "https://pbnurqqlnpmxvyjscjea.supabase.co",
+  "sb_publishable_2jY4IA69qjmU1JdwdHx0YA_5HeoItjF"
+);
+    
     function irAMensaje(estado) {
       // Redirige a mensajes.html pasando la emoción
       window.location.href = `mensajes.html?estado=${estado}`;
