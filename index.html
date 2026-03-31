@@ -23,126 +23,19 @@
     <button onclick="irAMensaje('abrumada')">😵‍💫</button>
   </div>
 
-    <div id="mensajeVacaciones" style="
-margin:20px;
-padding:20px;
-border-radius:12px;
-background:#dff5d8;
-color:black;
-box-shadow:0 4px 10px rgba(0,0,0,0.1);
-">
-
-<p style="font-size:16px;">
-Holaaa Anahí. Espero que estés descansando y disfrutando estas vacaciones ☀️  
-Estaba pensando en agregar un botón ⭐ para que te llegue una notificación cuando me acuerde o piense en ti, como un pequeño recordatorio.  
-Pero quería saber qué opinas primero. Si no te gusta la idea no pasa nada y la quitamos. ¿Tú dime?
-</p>
-
-<button class="botonRespuesta" onclick="guardarRespuesta('si')">Sí me gusta</button>
-<button class="botonRespuesta" onclick="guardarRespuesta('no')">No me gusta</button>
-<button class="botonRespuesta" onclick="guardarRespuesta('talvez')">Tal vez después</button>
-
-<br><br>
-
-<input id="opinionTexto" type="text" placeholder="O puedes escribir lo que pienses aquí..." style="
-width:90%;
-padding:10px;
-border-radius:8px;
-border:1px solid #ccc;
-">
-
-<br><br>
-
-<button class="botonEnviar" onclick="enviarOpinion()">Enviar opinión</button>
-
-<p style="margin-top:12px;">Att. Víctor 🫶🏼</p>
-
-</div>
-
-<p id="gracias" style="display:none;font-weight:bold;color:black;">
-Gracias por responder 😊
-</p>
-
-<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-
-<script>
-
-const supabase = window.supabase.createClient(
-  "https://pbnurqqlnpmxvyjscjea.supabase.co",
-  "sb_publishable_2jY4IA69qjmU1JdwdHx0YA_5HeoItjF"
-);
-
-// Redirigir a mensajes
-function irAMensaje(estado) {
-  window.location.href = "mensajes.html?estado=" + estado;
-}
-
-// Service worker
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js');
-  });
-}
-
-// Guardar respuesta
-async function guardarRespuesta(respuesta){
-
-  try{
-
-    await supabase
-      .from("respuestas_vacaciones")
-      .insert([{respuesta: respuesta}]);
-
-    localStorage.setItem("vacacionesRespondido","true");
-
-    document.getElementById("mensajeVacaciones").style.display = "none";
-    document.getElementById("gracias").style.display = "block";
-
-  }catch(error){
-    console.log(error);
-    alert("Error al guardar");
-  }
-
-}
-
-// Enviar opinión
-async function enviarOpinion(){
-
-  const texto = document.getElementById("opinionTexto").value;
-
-  if(texto.trim() === "") return;
-
-  try{
-
-    await supabase
-      .from("respuestas_vacaciones")
-      .insert([{respuesta: texto}]);
-
-    localStorage.setItem("vacacionesRespondido","true");
-
-    document.getElementById("mensajeVacaciones").style.display = "none";
-    document.getElementById("gracias").style.display = "block";
-
-  }catch(error){
-    console.log(error);
-    alert("Error al enviar");
-  }
-
-}
-
-// Ocultar mensaje si ya respondió
-window.addEventListener("load", () => {
-
-  const mensaje = document.getElementById("mensajeVacaciones");
-
-  if(localStorage.getItem("vacacionesRespondido")){
-    if(mensaje){
-      mensaje.style.display = "none";
+  <script>
+    function irAMensaje(estado) {
+      // Redirige a mensajes.html pasando la emoción
+      window.location.href = `mensajes.html?estado=${estado}`;
     }
-  }
-
-});
-
-</script>
+    
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('Note-AJSR registrada con éxito'))
+                    .catch(err => console.log('Error al registrar PWA', err));
+            });
+        }
+  </script>
 </body>
-</html>
+</html> 
