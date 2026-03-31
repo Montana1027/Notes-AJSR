@@ -63,7 +63,7 @@ border:1px solid #ccc;
 Gracias por responder 😊
 </p>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
 <script>
 
@@ -72,65 +72,77 @@ const supabase = window.supabase.createClient(
   "sb_publishable_2jY4IA69qjmU1JdwdHx0YA_5HeoItjF"
 );
 
-// Redirigir a la página de mensajes según emoción
+// Redirigir a mensajes
 function irAMensaje(estado) {
-  window.location.href = `mensajes.html?estado=${estado}`;
+  window.location.href = "mensajes.html?estado=" + estado;
 }
 
-// Registrar service worker
+// Service worker
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js')
-      .then(reg => console.log('Note-AJSR registrada con éxito'))
-      .catch(err => console.log('Error al registrar PWA', err));
+    navigator.serviceWorker.register('./sw.js');
   });
 }
 
-// Guardar respuesta de botones
-async function guardarRespuesta(respuesta) {
+// Guardar respuesta
+async function guardarRespuesta(respuesta){
 
-  await supabase
-    .from("respuestas_vacaciones")
-    .insert([{ respuesta: respuesta }]);
+  try{
 
-  // guardar que ya respondió
-  localStorage.setItem("vacacionesRespondido","true");
+    await supabase
+      .from("respuestas_vacaciones")
+      .insert([{respuesta: respuesta}]);
 
-  // ocultar mensaje
-  document.getElementById("mensajeVacaciones").style.display = "none";
+    localStorage.setItem("vacacionesRespondido","true");
 
-  // mostrar agradecimiento
-  document.getElementById("gracias").style.display = "block";
+    document.getElementById("mensajeVacaciones").style.display = "none";
+    document.getElementById("gracias").style.display = "block";
+
+  }catch(error){
+    console.log(error);
+    alert("Error al guardar");
+  }
 
 }
 
-// Guardar opinión escrita
-async function enviarOpinion() {
+// Enviar opinión
+async function enviarOpinion(){
 
   const texto = document.getElementById("opinionTexto").value;
 
   if(texto.trim() === "") return;
 
-  await supabase
-    .from("respuestas_vacaciones")
-    .insert([{ respuesta: texto }]);
+  try{
 
-  // guardar que ya respondió
-  localStorage.setItem("vacacionesRespondido","true");
+    await supabase
+      .from("respuestas_vacaciones")
+      .insert([{respuesta: texto}]);
 
-  document.getElementById("mensajeVacaciones").style.display = "none";
-  document.getElementById("gracias").style.display = "block";
+    localStorage.setItem("vacacionesRespondido","true");
 
-}
+    document.getElementById("mensajeVacaciones").style.display = "none";
+    document.getElementById("gracias").style.display = "block";
 
-// Verificar si ya respondió antes
-if(localStorage.getItem("vacacionesRespondido")){
-  const mensaje = document.getElementById("mensajeVacaciones");
-  if(mensaje){
-    mensaje.style.display = "none";
+  }catch(error){
+    console.log(error);
+    alert("Error al enviar");
   }
+
 }
-    
-  </script>
+
+// Ocultar mensaje si ya respondió
+window.addEventListener("load", () => {
+
+  const mensaje = document.getElementById("mensajeVacaciones");
+
+  if(localStorage.getItem("vacacionesRespondido")){
+    if(mensaje){
+      mensaje.style.display = "none";
+    }
+  }
+
+});
+
+</script>
 </body>
 </html>
